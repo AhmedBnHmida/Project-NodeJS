@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <h2>User Management</h2>
+  <!-- User form for creating and updating users -->
+  <form id="userForm">
+    <input type="hidden" id="userId" name="userId">
+    <div>
+      <label for="name">Name:</label>
+      <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+      <label for="email">Email:</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div>
+      <label for="role">Role:</label>
+      <select id="role" name="role" required>
+        <option value="admin">Admin</option>
+        <option value="user">User</option>
+      </select>
+    </div>
+    <div>
+      <button type="button" onclick="submitForm()">Save</button>
+      <button type="button" onclick="clearForm()">Cancel</button>
+    </div>
+  </form>
+
+  <h3>Notifications</h3>
+  <div id="notifications"></div>
+
+  <script>
+    const socket = io.connect();
+
+    // Listen for server-side events
+    socket.on("user:created", (user) => {
+      const notification = document.createElement("div");
+      notification.style.border = "1px solid green";
+      notification.style.backgroundColor = "#e8f5e9";
+      notification.style.padding = "10px";
+      notification.style.marginBottom = "5px";
+
+      notification.innerHTML = `
+        <strong>New User Added!</strong><br>
+        Name: ${user.name}<br>
+        Email: ${user.email}<br>
+        Role: ${user.role}
+      `;
+
+      document.getElementById("notifications").prepend(notification);
+
+      // Optional: Automatically hide the notification after 5 seconds
+      setTimeout(() => notification.remove(), 5000);
+    });
+
+    socket.on("error", (error) => {
+      const p = document.createElement("p");
+      p.style.color = "red";
+      p.innerText = `Error: ${error.message}`;
+      document.getElementById("notifications").appendChild(p);
+    });
+
+    // Handle form submission
+    function submitForm() {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const role = document.getElementById("role").value;
+
+      if (name && email && role) {
+        const userData = { name, email, role };
+        socket.emit("user:created", userData); // Emit the 'user:created' event
+        clearForm(); // Clear the form after submitting
+      } else {
+        alert("Please fill in all fields.");
+      }
+    }
+
+    // Clear the form
+    function clearForm() {
+      document.getElementById("userForm").reset();
+      document.getElementById("userId").value = "";
+    }
+  </script>
+</body>
+</html>
